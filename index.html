@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astro Hopper | axvi.me</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 600px;
+            margin: 0 auto;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+        }
+
+        #high-score-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 20px;
+            opacity: 0.8;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        #game-over.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #game-over h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ff3860;
+            text-shadow: 0 0 15px rgba(255, 56, 96, 0.7);
+        }
+
+        #final-score {
+            font-size: 36px;
+            margin-bottom: 30px;
+        }
+
+        #restart-btn {
+            background: linear-gradient(to right, #4ecdc4, #2a9d8f);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.8);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        #title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 15;
+            font-size: 60px;
+            color: #ffe66d;
+            text-shadow: 0 0 20px rgba(255, 230, 109, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        #title h1 {
+            margin-bottom: 20px;
+            font-size: 60px;
+        }
+
+        #start-btn {
+            background: linear-gradient(to right, #ff6b6b, #ff3860);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.8);
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .planet-label {
+            position: absolute;
+            font-size: 12px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="score-display">SCORE: 0</div>
+            <div id="high-score-display">HIGH SCORE: 0</div>
+            <div id="instructions">Press SPACE or TAP to thrust | Avoid the edges!</div>
+            
+            <div id="title">
+                <h1>ASTRO HOPPER</h1>
+                <button id="start-btn">START MISSION</button>
+            </div>
+            
+            <div id="game-over">
+                <h1>MISSION FAILED</h1>
+                <div id="final-score">Score: 0</div>
+                <button id="restart-btn">TRY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game constants
+        const GRAVITY = 0.2;
+        const THRUST_POWER = 5;
+        const PLAYER_RADIUS = 15;
+        const COLLAPSE_SPEED = 0.0005;
+        const BASE_PLANET_SPAWN_RATE = 120; // frames
+        const STARDUST_SPAWN_RATE = 300; // frames
+        
+        // Game variables
+        let canvas, ctx;
+        let gameWidth, gameHeight;
+        let player;
+        let planets = [];
+        let stardust = [];
+        let score = 0;
+        let highScore = localStorage.getItem('astroHopperHighScore') || 0;
+        let frameCount = 0;
+        let gameRunning = false;
+        let collapseBoundary = 0;
+        let animationId;
+        
+        // DOM elements
+        const scoreDisplay = document.getElementById('score-display');
+        const highScoreDisplay = document.getElementById('high-score-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const gameOverScreen = document.getElementById('game-over');
+        const titleScreen = document.getElementById('title');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // Initialize game
+        function init() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            gameWidth = canvas.width = canvas.offsetWidth;
+            gameHeight = canvas.height = canvas.offsetHeight;
+            
+            // Set high score display
+            highScoreDisplay.textContent = `HIGH SCORE: ${highScore}`;
+            
+            // Event listeners
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', startGame);
+            document.addEventListener('keydown', handleKeyDown);
+            canvas.addEventListener('touchstart', handleTouch, { passive: false });
+            canvas.addEventListener('mousedown', handleTouch);
+        }
+        
+        // Start the game
+        function startGame() {
+            // Reset game state
+            player = {
+                x: gameWidth / 2,
+                y: gameHeight / 2,
+                vx: 0,
+                vy: 0,
+                radius: PLAYER_RADIUS,
+                color: '#ffe66d',
+                thrusting: false
+            };
+            
+            planets = [];
+            stardust = [];
+            score = 0;
+            frameCount = 0;
+            collapseBoundary = 0;
+            gameRunning = true;
+            
+            // Update UI
+            scoreDisplay.textContent = `SCORE: ${score}`;
+            gameOverScreen.classList.remove('show');
+            titleScreen.style.display = 'none';
+            
+            // Start game loop
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            update();
+            render();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        // Update game state
+        function update() {
+            frameCount++;
+            
+            // Apply gravity to player
+            player.vy += GRAVITY;
+            
+            // Update player position
+            player.x += player.vx;
+            player.y += player.vy;
+            
+            // Increase collapse boundary
+            collapseBoundary += COLLAPSE_SPEED * score;
+            const boundary = collapseBoundary * gameWidth;
+            
+            // Check for collision with collapsing boundaries
+            if (player.x - player.radius < boundary || 
+                player.x + player.radius > gameWidth - boundary ||
+                player.y - player.radius < boundary || 
+                player.y + player.radius > gameHeight - boundary) {
+                endGame();
+                return;
+            }
+            
+            // Spawn planets
+            if (frameCount % Math.max(30, BASE_PLANET_SPAWN_RATE - Math.floor(score / 50)) === 0) {
+                spawnPlanet();
+            }
+            
+            // Spawn stardust
+            if (frameCount % STARDUST_SPAWN_RATE === 0) {
+                spawnStardust();
+            }
+            
+            // Update planets
+            for (let i = planets.length - 1; i >= 0; i--) {
+                const planet = planets[i];
+                
+                // Apply gravitational pull
+                const dx = planet.x - player.x;
+                const dy = planet.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < planet.radius * 4) {
+                    const force = 0.1 * (1 - distance / (planet.radius * 4));
+                    player.vx += dx / distance * force;
+                    player.vy += dy / distance * force;
+                }
+                
+                // Check for collision
+                if (distance < player.radius + planet.radius) {
+                    // Bounce effect
+                    const angle = Math.atan2(dy, dx);
+                    const overlap = player.radius + planet.radius - distance;
+                    
+                    player.x -= Math.cos(angle) * overlap * 0.5;
+                    player.y -= Math.sin(angle) * overlap * 0.5;
+                    
+                    // Bounce velocity
+                    const dot = player.vx * dx + player.vy * dy;
+                    player.vx = -dx / distance * Math.abs(dot) * 0.01;
+                    player.vy = -dy / distance * Math.abs(dot) * 0.01;
+                    
+                    // Score for landing
+                    if (player.vy > 0) {
+                        score += Math.max(1, 10 - Math.floor(planet.radius / 10));
+                        scoreDisplay.textContent = `SCORE: ${score}`;
+                    }
+                }
+                
+                // Remove planets that are too small
+                planet.radius -= 0.05;
+                if (planet.radius < 5) {
+                    planets.splice(i, 1);
+                }
+            }
+            
+            // Update stardust
+            for (let i = stardust.length - 1; i >= 0; i--) {
+                const dust = stardust[i];
+                
+                // Move towards player
+                const dx = player.x - dust.x;
+                const dy = player.y - dust.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 100) {
+                    dust.x += dx * 0.05;
+                    dust.y += dy * 0.05;
+                }
+                
+                // Check for collection
+                if (distance < player.radius + dust.radius) {
+                    stardust.splice(i, 1);
+                    score += 20;
+                    scoreDisplay.textContent = `SCORE: ${score}`;
+                }
+                
+                // Remove old stardust
+                dust.lifetime--;
+                if (dust.lifetime <= 0) {
+                    stardust.splice(i, 1);
+                }
+            }
+        }
+        
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = 'rgba(15, 12, 41, 0.2)';
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+            
+            // Draw collapsing boundary
+            const boundary = collapseBoundary * gameWidth;
+            ctx.strokeStyle = 'rgba(255, 56, 96, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.rect(boundary, boundary, gameWidth - boundary * 2, gameHeight - boundary * 2);
+            ctx.stroke();
+            
+            // Draw stardust
+            stardust.forEach(dust => {
+                ctx.beginPath();
+                ctx.arc(dust.x, dust.y, dust.radius, 0, Math.PI * 2);
+                ctx.fillStyle = dust.color;
+                ctx.fill();
+                
+                // Draw glow
+                ctx.beginPath();
+                ctx.arc(dust.x, dust.y, dust.radius * 3, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(
+                    dust.x, dust.y, 0, 
+                    dust.x, dust.y, dust.radius * 3
+                );
+                gradient.addColorStop(0, dust.color + 'aa');
+                gradient.addColorStop(1, dust.color + '00');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            });
+            
+            // Draw planets
+            planets.forEach(planet => {
+                // Planet glow
+                ctx.beginPath();
+                ctx.arc(planet.x, planet.y, planet.radius * 1.5, 0, Math.PI * 2);
+                const glowGradient = ctx.createRadialGradient(
+                    planet.x, planet.y, planet.radius * 0.5,
+                    planet.x, planet.y, planet.radius * 1.5
+                );
+                glowGradient.addColorStop(0, planet.color + 'cc');
+                glowGradient.addColorStop(1, planet.color + '00');
+                ctx.fillStyle = glowGradient;
+                ctx.fill();
+                
+                // Planet body
+                ctx.beginPath();
+                ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(
+                    planet.x - planet.radius/3, planet.y - planet.radius/3, 1,
+                    planet.x, planet.y, planet.radius
+                );
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(0.1, planet.color);
+                gradient.addColorStop(1, planet.color.replace(')', ', 0.5)').replace('rgb', 'rgba'));
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Planet craters
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.arc(planet.x - planet.radius/3, planet.y - planet.radius/4, planet.radius/4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(planet.x + planet.radius/3, planet.y + planet.radius/3, planet.radius/5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            
+            // Player gradient
+            const playerGradient = ctx.createRadialGradient(
+                player.x - player.radius/3, player.y - player.radius/3, 1,
+                player.x, player.y, player.radius
+            );
+            playerGradient.addColorStop(0, '#ffffff');
+            playerGradient.addColorStop(0.2, player.color);
+            playerGradient.addColorStop(1, '#d4c44d');
+            ctx.fillStyle = playerGradient;
+            ctx.fill();
+            
+            // Player details (helmet)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw thrust effect
+            if (player.thrusting) {
+                ctx.beginPath();
+                ctx.moveTo(player.x - player.radius*0.7, player.y + player.radius);
+                ctx.lineTo(player.x, player.y + player.radius + 20 + Math.random() * 10);
+                ctx.lineTo(player.x + player.radius*0.7, player.y + player.radius);
+                const thrustGradient = ctx.createLinearGradient(
+                    player.x, player.y + player.radius,
+                    player.x, player.y + player.radius + 30
+                );
+                thrustGradient.addColorStop(0, '#ff6b6b');
+                thrustGradient.addColorStop(1, '#ffe66d00');
+                ctx.fillStyle = thrustGradient;
+                ctx.fill();
+                
+                player.thrusting = false;
+            }
+            
+            // Draw stars in background
+            drawStars();
+        }
+        
+        // Draw background stars
+        function drawStars() {
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 37) % gameWidth;
+                const y = (i * 57) % gameHeight;
+                const size = Math.random() * 2;
+                const opacity = Math.random() * 0.5 + 0.2;
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Spawn a new planet
+        function spawnPlanet() {
+            // Random position near the edges
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            
+            switch (side) {
+                case 0: // top
+                    x = Math.random() * gameWidth;
+                    y = -50;
+                    break;
+                case 1: // right
+                    x = gameWidth + 50;
+                    y = Math.random() * gameHeight;
+                    break;
+                case 2: // bottom
+                    x = Math.random() * gameWidth;
+                    y = gameHeight + 50;
+                    break;
+                case 3: // left
+                    x = -50;
+                    y = Math.random() * gameHeight;
+                    break;
+            }
+            
+            // Random properties
+            const radius = Math.random() * 30 + 20;
+            const colors = [
+                '#ff6b6b', // red
+                '#4ecdc4', // teal
+                '#a663cc', // purple
+                '#ffd166', // yellow
+                '#7ae582'  // green
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            planets.push({
+                x, y, radius, color,
+                vx: (gameWidth/2 - x) * 0.005,
+                vy: (gameHeight/2 - y) * 0.005
+            });
+        }
+        
+        // Spawn stardust
+        function spawnStardust() {
+            const x = Math.random() * gameWidth;
+            const y = Math.random() * gameHeight;
+            const radius = Math.random() * 5 + 3;
+            const colors = ['#ffe66d', '#4ecdc4', '#ff6b6b'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            stardust.push({
+                x, y, radius, color,
+                lifetime: 500
+            });
+        }
+        
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            if (!gameRunning) return;
+            
+            if (e.code === 'Space') {
+                applyThrust();
+            }
+        }
+        
+        // Handle touch/mouse input
+        function handleTouch(e) {
+            e.preventDefault();
+            if (!gameRunning) return;
+            applyThrust();
+        }
+        
+        // Apply thrust to player
+        function applyThrust() {
+            player.vy -= THRUST_POWER;
+            player.thrusting = true;
+        }
+        
+        // End the game
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            
+            // Update high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('astroHopperHighScore', highScore);
+                highScoreDisplay.textContent = `HIGH SCORE: ${highScore}`;
+            }
+            
+            // Show game over screen
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.classList.add('show');
+        }
+        
+        // Initialize the game when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
