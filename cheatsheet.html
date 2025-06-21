@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bash Cheat Sheet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .cheat-sheet {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 5px solid #43cea2;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        header h1 i {
+            color: #43cea2;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 150px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-card .number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #43cea2;
+        }
+        
+        .content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .section {
+            background: #f9fbfd;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e6eef5;
+            transition: transform 0.3s ease;
+        }
+        
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section h2 {
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #43cea2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section h2 i {
+            color: #2c3e50;
+        }
+        
+        .command-list {
+            list-style: none;
+        }
+        
+        .command-list li {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e7ee;
+        }
+        
+        .command {
+            font-family: 'Courier New', monospace;
+            background: #edf2f7;
+            padding: 8px 12px;
+            border-radius: 5px;
+            display: block;
+            margin: 8px 0;
+            white-space: pre-wrap;
+            color: #c53030;
+            border-left: 3px solid #43cea2;
+            font-size: 0.95rem;
+        }
+        
+        .description {
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+        
+        .tip {
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .tip strong {
+            color: #2c7a7b;
+        }
+        
+        footer {
+            background: #2c3e50;
+            color: #cbd5e0;
+            text-align: center;
+            padding: 25px;
+            font-size: 0.9rem;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .print-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #43cea2, #185a9d);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .print-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media print {
+            .print-btn {
+                display: none;
+            }
+            
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .cheat-sheet {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .section {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cheat-sheet">
+        <header>
+            <h1><i class="fas fa-terminal"></i> Bash Cheat Sheet</h1>
+            <p class="subtitle">Essential commands and syntax for efficient terminal usage and scripting</p>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="number">40+</div>
+                    <div>Essential Commands</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">90%</div>
+                    <div>Server Usage</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">1-2 Days</div>
+                    <div>To Learn Basics</div>
+                </div>
+            </div>
+        </header>
+        
+        <button class="print-btn" onclick="window.print()">
+            <i class="fas fa-print"></i> Print to PDF
+        </button>
+        
+        <div class="content">
+            <div class="section">
+                <h2><i class="fas fa-folder-open"></i> File Operations</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">ls [options] [directory]</span>
+                        <span class="description">List directory contents</span>
+                    </li>
+                    <li>
+                        <span class="command">cd [directory]</span>
+                        <span class="description">Change working directory</span>
+                    </li>
+                    <li>
+                        <span class="command">pwd</span>
+                        <span class="description">Print current working directory</span>
+                    </li>
+                    <li>
+                        <span class="command">cp [options] source destination</span>
+                        <span class="description">Copy files/directories</span>
+                    </li>
+                    <li>
+                        <span class="command">mv [options] source destination</span>
+                        <span class="description">Move/rename files/directories</span>
+                    </li>
+                    <li>
+                        <span class="command">rm [options] file</span>
+                        <span class="description">Remove files/directories</span>
+                    </li>
+                    <li>
+                        <span class="command">mkdir [options] directory</span>
+                        <span class="description">Create new directory</span>
+                    </li>
+                    <li>
+                        <span class="command">touch filename</span>
+                        <span class="description">Create empty file or update timestamp</span>
+                    </li>
+                </ul>
+                <div class="tip">
+                    <strong>Pro Tip:</strong> Use <code>ls -l</code> for detailed listing, 
+                    <code>ls -a</code> to show hidden files
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-file-alt"></i> File Viewing</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">cat [options] file</span>
+                        <span class="description">Display entire file</span>
+                    </li>
+                    <li>
+                        <span class="command">less [options] file</span>
+                        <span class="description">View file interactively (press q to quit)</span>
+                    </li>
+                    <li>
+                        <span class="command">head [options] file</span>
+                        <span class="description">Display first lines of file</span>
+                    </li>
+                    <li>
+                        <span class="command">tail [options] file</span>
+                        <span class="description">Display last lines of file</span>
+                    </li>
+                    <li>
+                        <span class="command">tail -f file</span>
+                        <span class="description">Follow file as it grows (great for logs)</span>
+                    </li>
+                    <li>
+                        <span class="command">grep [options] pattern [file]</span>
+                        <span class="description">Search for patterns in files</span>
+                    </li>
+                    <li>
+                        <span class="command">find [path] [expression]</span>
+                        <span class="description">Search for files/directories</span>
+                    </li>
+                </ul>
+                <div class="tip">
+                    <strong>Pro Tip:</strong> Use <code>grep -r "pattern" directory</code> 
+                    to search recursively
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-user-shield"></i> Permissions</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">chmod [options] mode file</span>
+                        <span class="description">Change file permissions</span>
+                    </li>
+                    <li>
+                        <span class="command">chown [options] user[:group] file</span>
+                        <span class="description">Change file owner/group</span>
+                    </li>
+                    <li>
+                        <span class="command">sudo command</span>
+                        <span class="description">Execute command as superuser</span>
+                    </li>
+                    <li>
+                        <span class="command">su [username]</span>
+                        <span class="description">Switch user</span>
+                    </li>
+                    <li>
+                        <span class="command">passwd [username]</span>
+                        <span class="description">Change user password</span>
+                    </li>
+                </ul>
+                <div class="tip">
+                    <strong>Permission Codes:</strong> 
+                    <code>4 = read</code>, <code>2 = write</code>, <code>1 = execute</code>
+                    <br>Example: <code>chmod 755 file</code> (rwxr-xr-x)
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-network-wired"></i> Networking</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">ping [options] host</span>
+                        <span class="description">Test network connectivity</span>
+                    </li>
+                    <li>
+                        <span class="command">ifconfig</span>
+                        <span class="description">Display network interfaces (deprecated)</span>
+                    </li>
+                    <li>
+                        <span class="command">ip [options]</span>
+                        <span class="description">Modern network configuration tool</span>
+                    </li>
+                    <li>
+                        <span class="command">netstat [options]</span>
+                        <span class="description">Network statistics</span>
+                    </li>
+                    <li>
+                        <span class="command">ssh [user@]host</span>
+                        <span class="description">Secure shell remote login</span>
+                    </li>
+                    <li>
+                        <span class="command">scp [options] source target</span>
+                        <span class="description">Secure file copy</span>
+                    </li>
+                    <li>
+                        <span class="command">wget [options] url</span>
+                        <span class="description">Download files from web</span>
+                    </li>
+                    <li>
+                        <span class="command">curl [options] url</span>
+                        <span class="description">Transfer data from URLs</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-microchip"></i> Process Management</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">ps [options]</span>
+                        <span class="description">Display current processes</span>
+                    </li>
+                    <li>
+                        <span class="command">top</span>
+                        <span class="description">Interactive process viewer</span>
+                    </li>
+                    <li>
+                        <span class="command">htop</span>
+                        <span class="description">Enhanced process viewer (if installed)</span>
+                    </li>
+                    <li>
+                        <span class="command">kill [options] PID</span>
+                        <span class="description">Terminate process by ID</span>
+                    </li>
+                    <li>
+                        <span class="command">killall [options] process_name</span>
+                        <span class="description">Terminate processes by name</span>
+                    </li>
+                    <li>
+                        <span class="command">bg [job_spec]</span>
+                        <span class="description">Run job in background</span>
+                    </li>
+                    <li>
+                        <span class="command">fg [job_spec]</span>
+                        <span class="description">Bring job to foreground</span>
+                    </li>
+                    <li>
+                        <span class="command">jobs</span>
+                        <span class="description">List background jobs</span>
+                    </li>
+                </ul>
+                <div class="tip">
+                    <strong>Pro Tip:</strong> Use <code>ps aux | grep process</code> to 
+                    find specific processes
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-code"></i> Scripting Basics</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">#!/bin/bash</span>
+                        <span class="description">Shebang - first line in script</span>
+                    </li>
+                    <li>
+                        <span class="command"># Comment</span>
+                        <span class="description">Single-line comment</span>
+                    </li>
+                    <li>
+                        <span class="command">variable=value</span>
+                        <span class="description">Set variable (no spaces around =)</span>
+                    </li>
+                    <li>
+                        <span class="command">echo "Text $variable"</span>
+                        <span class="description">Print output</span>
+                    </li>
+                    <li>
+                        <span class="command">read variable</span>
+                        <span class="description">Read user input</span>
+                    </li>
+                    <li>
+                        <span class="command">if [ condition ]; then ... fi</span>
+                        <span class="description">If conditional</span>
+                    </li>
+                    <li>
+                        <span class="command">for var in list; do ... done</span>
+                        <span class="description">For loop</span>
+                    </li>
+                    <li>
+                        <span class="command">while [ condition ]; do ... done</span>
+                        <span class="description">While loop</span>
+                    </li>
+                    <li>
+                        <span class="command">function_name() { ... }</span>
+                        <span class="description">Define function</span>
+                    </li>
+                </ul>
+                <div class="tip">
+                    <strong>Variables:</strong> <code>$0</code> = script name, 
+                    <code>$1</code> = first argument, <code>$#</code> = argument count
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-compress-arrows-alt"></i> Redirection</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">command > file</span>
+                        <span class="description">Redirect stdout to file (overwrite)</span>
+                    </li>
+                    <li>
+                        <span class="command">command >> file</span>
+                        <span class="description">Redirect stdout to file (append)</span>
+                    </li>
+                    <li>
+                        <span class="command">command < file</span>
+                        <span class="description">Redirect stdin from file</span>
+                    </li>
+                    <li>
+                        <span class="command">command 2> file</span>
+                        <span class="description">Redirect stderr to file</span>
+                    </li>
+                    <li>
+                        <span class="command">command > file 2>&1</span>
+                        <span class="description">Redirect stdout and stderr to file</span>
+                    </li>
+                    <li>
+                        <span class="command">command1 | command2</span>
+                        <span class="description">Pipe stdout of command1 to stdin of command2</span>
+                    </li>
+                    <li>
+                        <span class="command">command1 && command2</span>
+                        <span class="description">Run command2 if command1 succeeds</span>
+                    </li>
+                    <li>
+                        <span class="command">command1 || command2</span>
+                        <span class="description">Run command2 if command1 fails</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2><i class="fas fa-archive"></i> Archives</h2>
+                <ul class="command-list">
+                    <li>
+                        <span class="command">tar cf archive.tar files</span>
+                        <span class="description">Create tar archive</span>
+                    </li>
+                    <li>
+                        <span class="command">tar xf archive.tar</span>
+                        <span class="description">Extract tar archive</span>
+                    </li>
+                    <li>
+                        <span class="command">tar czf archive.tar.gz files</span>
+                        <span class="description">Create gzipped tar archive</span>
+                    </li>
+                    <li>
+                        <span class="command">tar xzf archive.tar.gz</span>
+                        <span class="description">Extract gzipped tar archive</span>
+                    </li>
+                    <li>
+                        <span class="command">gzip file</span>
+                        <span class="description">Compress file (creates file.gz)</span>
+                    </li>
+                    <li>
+                        <span class="command">gunzip file.gz</span>
+                        <span class="description">Decompress file</span>
+                    </li>
+                    <li>
+                        <span class="command">zip archive.zip files</span>
+                        <span class="description">Create zip archive</span>
+                    </li>
+                    <li>
+                        <span class="command">unzip archive.zip</span>
+                        <span class="description">Extract zip archive</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="footer-content">
+                <p>Bash Cheat Sheet | Created for developers | Print with Ctrl+P or use the Print button above</p>
+                <p>For more details: <code>man bash</code> | GNU Bash Reference Manual</p>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        // Add date to footer
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            const footer = document.querySelector('footer .footer-content');
+            const dateElement = document.createElement('p');
+            dateElement.textContent = `Generated on: ${dateStr}`;
+            dateElement.style.marginTop = '10px';
+            dateElement.style.fontSize = '0.85rem';
+            footer.appendChild(dateElement);
+        });
+    </script>
+</body>
+</html>
